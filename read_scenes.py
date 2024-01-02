@@ -9,8 +9,8 @@ import math
 import random
 
 def main():
-    scene_number = random.randint(1, 14)
-    pcd_original = o3d.io.read_point_cloud(f'data/rgbd-scenes-v2_pc/rgbd-scenes-v2/pc/{scene_number}.ply')
+    # scene_number = random.randint(1, 14)
+    pcd_original = o3d.io.read_point_cloud(f'data/rgbd-scenes-v2_pc/rgbd-scenes-v2/pc/01.ply')
 
     # Downsample using voxel grid
     pcd_downsampled = pcd_original.voxel_down_sample(voxel_size=0.02)

@@ -9,11 +9,13 @@ import math
 import random
 
 def main():
-    # scene_number = random.randint(1, 14)
-    pcd_original = o3d.io.read_point_cloud(f'data/rgbd-scenes-v2_pc/rgbd-scenes-v2/pc/01.ply')
+    scene_number = random.choice(list(views.keys()))
 
-    # Downsample using voxel grid
+    pcd_original = o3d.io.read_point_cloud(f"data/scenes/rgbd-scenes-v2_pc/rgbd-scenes-v2/pc/{scene_number}.ply")
+
+    # Downsample using voxel grid ------------------------------------
     pcd_downsampled = pcd_original.voxel_down_sample(voxel_size=0.02)
+    # pcd_downsampled.paint_uniform_color([1,0,0])
 
     # estimate normals
     pcd_downsampled.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
@@ -98,16 +100,13 @@ def main():
 
     entities = []
     entities.append(frame_world)
+    # entities.append(frame_table)
     entities.extend(pcds_to_draw)
     o3d.visualization.draw_geometries(entities,
                                       zoom=0.3412,
                                       front=views[scene_number]['trajectory'][0]['front'],
                                       lookat=views[scene_number]['trajectory'][0]['lookat'],
                                       up=views[scene_number]['trajectory'][0]['up'], point_show_normal=False)
-
-    # -----------------------------------------------------------------
-    # Termination
-    # -----------------------------------------------------------------
 
 
 if __name__ == "__main__":

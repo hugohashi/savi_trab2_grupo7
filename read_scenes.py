@@ -1,7 +1,7 @@
 
 #!/usr/bin/env python3
 
-from constants import *
+from views import *
 
 import open3d as o3d
 import numpy as np

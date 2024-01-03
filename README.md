@@ -3,7 +3,11 @@
 
 ## Where's my coffee mug?
 
-O objetivo deste trabalho é que o sistema desenvolvido seja capaz de detetar os objetos presentes numa cena e obter as suas propriedades. Para isso são utilizados os dados do Washington RGB-D Dataset, onde existem dois datasets distintos, o RGB-D Object Dataset e o RGB-D Scenes Dataset. O RGB-D Object Dataset contém vários objetos de diferentes categorias. Neste dataset os objetos são visualizados isoladamente. Além disso, o dataset contém informações acercas dos objetos tais como: os labels (ground truth), a pose do objeto, a sua localização nas imagens RGB, Depth e na point cloud. O RGB-D Scenes Dataset contém 14 cenas com mobília (sofás e mesas) e objetos que estão presentes no RGB-D Object Dataset. Este dataset tem também anotações dos objetos na cena.
+O objetivo deste trabalho é que o sistema desenvolvido seja capaz de detetar os objetos presentes numa cena e obter as suas propriedades. 
+Para isso são utilizados os dados do Washington RGB-D Dataset, onde existem dois datasets distintos, o RGB-D Object Dataset e o RGB-D Scenes Dataset. 
+O RGB-D Object Dataset contém vários objetos de diferentes categorias. Neste dataset os objetos são visualizados isoladamente. 
+Além disso, o dataset contém informações acercas dos objetos tais como: os labels (ground truth), a pose do objeto, a sua localização nas imagens RGB, Depth e na point cloud. O RGB-D Scenes Dataset contém 14 cenas com mobília (sofás e mesas) e objetos que estão presentes no RGB-D Object Dataset. 
+Este dataset tem também anotações dos objetos na cena.
 
 ### Objetivo 1 - Treino de um classificador em deep learning
 1.1 - Desenvolver uma rede de deep learning que consiga efetuar a classificação dos objetos, com a divisão do RGB-D Object Dataset em treino e teste (80% / 20%). 

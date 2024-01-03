@@ -7,18 +7,22 @@ O objetivo deste trabalho é que o siste,a desenvolvido seja capaz de detetar os
 
 ### Objetivo 1 - Treino de um classificador em deep learning
 1.1 - Desenvolver uma rede de deep learning que consiga efetuar a classificação dos objetos, com a divisão do RGB-D Object Dataset em treino e teste (80% / 20%). 
+
 1.2 - Depois de treinada, calcular a precisão global e por classe.
 
 ### Objetivo 2 - Pre-processamento 3D
 2.1 - Desenvolver um sistema que processe a nuvem de pontos de uma cena (dados do RGB-D Scenes Dataset) e que consiga isolar os objetos presentes nessa nuvem. 
+
 2.2 - Calcular as várias propriedades dos objetos como: a cor, a altura, a largura e outras propriedades relevantes.
 
 ### Objetivo 3 - Classificação de objetos na cena
 3.1 - Através do ponto anterior, extrair uma sub-imagem que contenha apenas o objeto.
+
 3.2 - Dar a imagem extraída à rede de classificação anteriormente desenvolvida. (Outra solução será treinar uma rede de classificação que utilize informação tridimensional para o reconhecimento de objetos.)
 
 ### Objetivo 4 - Descrição áudio da cena
 Utilizar um sintetizador de discurso para que o sistema consiga descrever verbalmente a cena que lhe é mostrada, dizendo por exemplo: 
+
 "A cena contém duas canecas, uma branca e outra azul, e uma caixa de cereais vermelha com altura de 15 centímetros."
 
 ### Objetivo 5 - Métricas de performance

@@ -16,20 +16,25 @@ class Dataset(torch.utils.data.Dataset):
         # Compute the corresponding labels
         self.labels = []
         for filename in self.filenames:
-            # basename = os.path.basename(filename)
             path_elements = filename.split('/')
-            label = path_elements[4]  # because basename is "cat.2109.jpg"
+            self.labels.append(path_elements[2])
 
-            self.labels.append(label)
+        # Create a set of unique labels
+        set_labels = set(self.labels)
+        # print(set_labels)
+        # print(len(set_labels))
 
-            # if label == 'dog':
-            #     self.labels.append(0)
-            # elif label == 'cat':
-            #     self.labels.append(1)
-            # else:
-            #     raise ValueError('Unknown label ' + label)
+        # Create a mapping from string labels to integer indexes
+        self.label_to_index = {label: index for index, label in enumerate(set_labels)}
+        # print(self.label_to_index)
 
-        self.set_labels = set(self.labels)
+        # Convert string labels to integer indexes
+        self.int_labels = [self.label_to_index[label] for label in self.labels]
+        # print(self.int_labels)
+
+        # # Print the corresponding index for each filename
+        # for filename, index in zip(self.filenames, self.int_labels):
+        #     print(f"Filename: {filename}, Index: {index}")
 
         self.transforms = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -53,3 +58,4 @@ class Dataset(torch.utils.data.Dataset):
         label = self.labels[index]
 
         return tensor_image, label
+    

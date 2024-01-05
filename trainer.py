@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
 
+#!/usr/bin/env python3
 
 import os
 from numpy import mean
 import torch
 import torch.nn as nn
-from torchvision import transforms
-from PIL import Image
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from colorama import Fore, Style
@@ -14,11 +12,13 @@ from colorama import Fore, Style
 
 class Trainer():
 
-    def __init__(self, model, train_loader, validation_loader, learning_rate, num_epochs, model_path, load_model):
+    def __init__(self, model, train_loader, validation_loader, learning_rate, num_epochs, model_path, load_model, label_to_index):
         self.model = model
         self.train_loader = train_loader
         self.validation_loader = validation_loader
         self.num_epochs = num_epochs
+
+        self.label_to_index = label_to_index
 
         self.loss = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=learning_rate)
@@ -27,7 +27,7 @@ class Trainer():
         print(Fore.BLUE + 'Device is ' + self.device + Style.RESET_ALL)
 
         # Setup matplotlib figure
-        plt.title('Training Cats vs Dogs', fontweight="bold")
+        plt.title('Training Objects Classifier', fontweight="bold")
         plt.axis([0, self.num_epochs, 0, 2])
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
@@ -96,7 +96,10 @@ class Trainer():
 
                 # move tensors to device
                 inputs = inputs.to(self.device)
-                labels_gt = labels_gt.to(self.device)
+              
+                # labels_gt = torch.tensor(labels_gt).to(self.device)
+                # labels_gt = torch.tensor([self.train_loader.label_to_index[label] for label in labels_gt]).to(self.device)
+                labels_gt = torch.tensor([self.label_to_index[label] for label in labels_gt]).to(self.device)
 
                 # Get predicted labels
                 labels_predicted = self.model.forward(inputs)
@@ -127,7 +130,8 @@ class Trainer():
 
                 # move tensors to device
                 inputs = inputs.to(self.device)
-                labels_gt = labels_gt.to(self.device)
+                # labels_gt = labels_gt.to(self.device)
+                labels_gt = torch.tensor([self.label_to_index[label] for label in labels_gt]).to(self.device)
 
                 # Get predicted labels
                 labels_predicted = self.model.forward(inputs)

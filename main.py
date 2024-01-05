@@ -13,9 +13,9 @@ from trainer import Trainer
 def main():
 
     # Initialize hyperparameters
-    batch_size = 128
+    batch_size = 100
     learning_rate = 0.001
-    num_epochs = 50
+    num_epochs = 30
 
     # Create model
     model = Model()
@@ -34,8 +34,6 @@ def main():
     train_dataset = Dataset(train_filenames)
     testing_dataset = Dataset(testing_filenames)
 
-    print(train_dataset.set_labels)
-
     # Try the train_dataset
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     validation_loader = torch.utils.data.DataLoader(dataset=testing_dataset, batch_size=batch_size, shuffle=True)
@@ -47,7 +45,8 @@ def main():
                       learning_rate=learning_rate,
                       num_epochs=num_epochs,
                       model_path='models/checkpoint.pkl',
-                      load_model=True)
+                      load_model=True,
+                      label_to_index=train_dataset.label_to_index)
     trainer.train()
 
     plt.show()

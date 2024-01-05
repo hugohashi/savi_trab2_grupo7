@@ -8,11 +8,11 @@ import os
 
 
 def main():
-    data_path = '../data/objects/rgbd-dataset'
+    data_path = 'data/rgbd-dataset'
     data_files = glob.glob(os.path.join(data_path, '**/*_crop.png'), recursive=True)
 
     # Get the set of items
-    
+
     # objects = []
     # for file in data_files:
     #     path_elements = file.split('/')

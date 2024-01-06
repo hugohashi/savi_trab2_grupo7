@@ -15,14 +15,13 @@ def main():
     # Initialize hyperparameters
     batch_size = 100
     learning_rate = 0.001
-    num_epochs = 30
+    num_epochs = 10
 
     # Create model
     model = Model()
 
-    # Prepare Datasets
+    # Read json file
     with open('split_dataset/dataset_files.json', 'r') as f:
-        # Read json file
         dataset_filenames = json.load(f)
 
     train_filenames = dataset_filenames['training_files']
@@ -45,8 +44,7 @@ def main():
                       learning_rate=learning_rate,
                       num_epochs=num_epochs,
                       model_path='models/checkpoint.pkl',
-                      load_model=True,
-                      label_to_index=train_dataset.label_to_index)
+                      load_model=True)
     trainer.train()
 
     plt.show()

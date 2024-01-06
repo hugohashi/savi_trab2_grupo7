@@ -1,51 +1,45 @@
 
 #!/usr/bin/env python3
 
-import torch
+from torch.utils.data import Dataset as TorchDataset
 from torchvision import transforms
 from PIL import Image
+import json
+import os
 
-
-class Dataset(torch.utils.data.Dataset):
+class Dataset(TorchDataset):
+    label_mapping_file = "label_mapping.json"
+    label_mapping = {}
 
     def __init__(self, filenames):
-
         self.filenames = filenames
         self.number_of_images = len(self.filenames)
+        self.load_label_mapping()
 
-        # Compute the corresponding labels
+        # Compute the labels
         self.labels = []
         for filename in self.filenames:
             path_elements = filename.split('/')
-            self.labels.append(path_elements[2])
+            label = path_elements[2]
 
-        # Create a set of unique labels
-        set_labels = set(self.labels)
-        # print(set_labels)
-        # print(len(set_labels))
+            if label not in self.label_mapping:
+                # Assign a new numerical value for the unseen label
+                self.label_mapping[label] = len(self.label_mapping)
 
-        # Create a mapping from string labels to integer indexes
-        self.label_to_index = {label: index for index, label in enumerate(set_labels)}
-        # print(self.label_to_index)
+            self.labels.append(self.label_mapping[label])
 
-        # Convert string labels to integer indexes
-        self.int_labels = [self.label_to_index[label] for label in self.labels]
-        # print(self.int_labels)
-
-        # # Print the corresponding index for each filename
-        # for filename, index in zip(self.filenames, self.int_labels):
-        #     print(f"Filename: {filename}, Index: {index}")
+        # print(self.label_mapping)
 
         self.transforms = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor()
         ])
 
+        self.save_label_mapping()
 
     def __len__(self):
         # Returns the size of the data
         return self.number_of_images
-
 
     def __getitem__(self, index):
         filename = self.filenames[index]
@@ -58,4 +52,15 @@ class Dataset(torch.utils.data.Dataset):
         label = self.labels[index]
 
         return tensor_image, label
-    
+
+    def save_label_mapping(self):
+        with open(self.label_mapping_file, 'w') as file:
+            json.dump(self.label_mapping, file)
+
+    def load_label_mapping(self):
+        if os.path.exists(self.label_mapping_file):
+            with open(self.label_mapping_file, 'r') as file:
+                self.label_mapping = json.load(file)
+        else:
+            self.label_mapping = {}
+

@@ -12,19 +12,17 @@ from colorama import Fore, Style
 
 class Trainer():
 
-    def __init__(self, model, train_loader, validation_loader, learning_rate, num_epochs, model_path, load_model, label_to_index):
+    def __init__(self, model, train_loader, validation_loader, learning_rate, num_epochs, model_path, load_model):
         self.model = model
         self.train_loader = train_loader
         self.validation_loader = validation_loader
         self.num_epochs = num_epochs
 
-        self.label_to_index = label_to_index
-
         self.loss = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(params=self.model.parameters(), lr=learning_rate)
 
-        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-        print(Fore.BLUE + 'Device is ' + self.device + Style.RESET_ALL)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(Fore.BLUE + 'Device is ' + str(self.device) + Style.RESET_ALL)
 
         # Setup matplotlib figure
         plt.title('Training Objects Classifier', fontweight="bold")
@@ -96,10 +94,7 @@ class Trainer():
 
                 # move tensors to device
                 inputs = inputs.to(self.device)
-              
-                # labels_gt = torch.tensor(labels_gt).to(self.device)
-                # labels_gt = torch.tensor([self.train_loader.label_to_index[label] for label in labels_gt]).to(self.device)
-                labels_gt = torch.tensor([self.label_to_index[label] for label in labels_gt]).to(self.device)
+                labels_gt = labels_gt.clone().detach().to(self.device)
 
                 # Get predicted labels
                 labels_predicted = self.model.forward(inputs)
@@ -115,7 +110,6 @@ class Trainer():
                 # Store batch loss
                 # TODO should we not normalize the batch_loss by the number of images in the batch?
                 batch_losses.append(batch_loss.data.item())
-                # print('batch_idx ' + str(batch_idx) + ' loss = ' + str(batch_loss.data.item()))
 
             # Compute epoch train loss
             epoch_train_loss = mean(batch_losses)
@@ -130,17 +124,13 @@ class Trainer():
 
                 # move tensors to device
                 inputs = inputs.to(self.device)
-                # labels_gt = labels_gt.to(self.device)
-                labels_gt = torch.tensor([self.label_to_index[label] for label in labels_gt]).to(self.device)
+                labels_gt = labels_gt.clone().detach().to(self.device)
 
                 # Get predicted labels
                 labels_predicted = self.model.forward(inputs)
 
                 # Compute loss comparing labels_predicted labels
                 batch_loss = self.loss(labels_predicted, labels_gt)
-
-                # Update model
-                # NOTE: During validation we do not update the model
 
                 # Store batch loss
                 # TODO should we not normalize the batch_loss by the number of images in the batch?
@@ -154,12 +144,15 @@ class Trainer():
             print('epoch_train_loss = ' + str(epoch_train_loss))
             print('epoch_validation_loss = ' + str(epoch_validation_loss))
 
-            # TODO Save to disk. Decide when we should save?
-            self.saveModel(model=self.model,
-                           optimizer=self.optimizer,
-                           epoch_idx=epoch_idx,
-                           epoch_train_losses=epoch_train_losses,
-                           epoch_validation_losses=epoch_validation_losses)
+            #Save the model when the difference between train loss and validation loss is lower than 0.01
+            if epoch_train_loss < 0.1 and epoch_validation_loss < 0.1:
+                self.saveModel(model=self.model,
+                            optimizer=self.optimizer,
+                            epoch_idx=epoch_idx,
+                            epoch_train_losses=epoch_train_losses,
+                            epoch_validation_losses=epoch_validation_losses)
+                print("model saved")
+                break
 
             self.draw(epoch_train_losses, epoch_validation_losses)
 

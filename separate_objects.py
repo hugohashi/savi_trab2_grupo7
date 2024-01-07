@@ -68,7 +68,7 @@ def main():
 
     #Criar a caixa através dos vértices definidos anteriormente
     box = o3d.geometry.AxisAlignedBoundingBox.create_from_points(vertices)
-    #box.color = (1,0,0)
+    box.color = (1,0,0)
 
     # cortar a pcd para conter apenas os pontos dentro da caixa
     pcd_cropped = pcd_downsampled.crop(box)
@@ -153,7 +153,7 @@ def main():
 
         properties = ObjectProperties(object)
         size = properties.getSize()
-        print("This object's SIZE is " + str(size))
+        print("This object's volume is " + str(size))
         dimensions.append(size)
 
         color_rgb = properties.getColor(object_idx)

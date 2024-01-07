@@ -49,6 +49,7 @@ class ObjectProperties():
         
         width = max_dist_from_center*2
         height = abs(max_z - min_z)
+        volume = math.pi()* width**2 * height  #cyclindrical volume
 
         self.point_cloud.translate(self.center)
 

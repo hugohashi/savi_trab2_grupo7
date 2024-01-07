@@ -153,7 +153,9 @@ def main():
 
         properties = ObjectProperties(object)
         size = properties.getSize()
-        print("This object's volume is " + str(size))
+        volume = math.pi* size[0]**2 * size[1] #cylindrical volume
+        #forlmula não está correta, aporximiação grosseira
+        print("This object's volume is " + str(volume))
         dimensions.append(size)
 
         color_rgb = properties.getColor(object_idx)

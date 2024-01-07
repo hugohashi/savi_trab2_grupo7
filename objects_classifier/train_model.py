@@ -4,9 +4,9 @@ import json
 import torch
 import matplotlib.pyplot as plt
 
-from dataset import Dataset
-from model import Model
-from trainer import Trainer
+from helping_classes.dataset import Dataset
+from helping_classes.model import Model
+from helping_classes.trainer import Trainer
 
 def main():
     # Initialize hyperparameters

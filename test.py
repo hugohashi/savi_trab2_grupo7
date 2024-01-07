@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 import json
@@ -12,13 +11,12 @@ import matplotlib.pyplot as plt
 from dataset import Dataset
 from model import Model
 
-
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 with open('split_dataset/dataset_files.json', 'r') as f:
     dataset_filenames = json.load(f)
 
-test_filenames = dataset_filenames['testing_files'][:100]
+test_filenames = dataset_filenames['testing_files']
 
 test_dataset = Dataset(test_filenames)
 
@@ -35,7 +33,35 @@ def get_key_by_value(dictionary, target_value):
     # If the value is not found, you can return a default value or raise an exception
     return None
 
-def evaluate_model(model, test_loader, device):
+
+def calculate_metrics_per_class(confusion_mat):
+    num_classes = confusion_mat.shape[0]
+    metrics_per_class = []
+
+    for i in range(num_classes):
+        TP = confusion_mat[i, i]
+        FP = sum(confusion_mat[:, i]) - TP
+        FN = sum(confusion_mat[i, :]) - TP
+        TN = sum(sum(confusion_mat)) - TP - FP - FN
+
+        precision = TP / (TP + FP) if TP + FP != 0 else 0
+        recall = TP / (TP + FN) if TP + FN != 0 else 0
+        f1_score = 2 * (precision * recall) / (precision + recall) if precision + recall != 0 else 0
+
+        metrics_per_class.append({
+            'precision': precision,
+            'recall': recall,
+            'f1_score': f1_score,
+            'TP': TP,
+            'TN': TN,
+            'FP': FP,
+            'FN': FN
+        })
+
+    return metrics_per_class
+
+
+def evaluate_model(model, test_loader, device, num_classes):
     model.eval()
 
     all_predicted_labels = []
@@ -53,14 +79,11 @@ def evaluate_model(model, test_loader, device):
             all_predicted_labels.extend(predicted_indexes)
             all_ground_truth_labels.extend(labels_gt.cpu().numpy())
 
-    confusion_mat = confusion_matrix(all_ground_truth_labels, all_predicted_labels)
-    TP, FP, FN, TN = confusion_mat[1, 1], confusion_mat[0, 1], confusion_mat[1, 0], confusion_mat[0, 0]
+    confusion_mat = confusion_matrix(all_ground_truth_labels, all_predicted_labels, labels=range(num_classes))
+    metrics_per_class = calculate_metrics_per_class(confusion_mat)
 
-    precision = TP / (TP + FP) if TP + FP != 0 else 0
-    recall = TP / (TP + FN) if TP + FN != 0 else 0
-    f1_score = 2 * (precision * recall) / (precision + recall) if precision + recall != 0 else 0
+    return metrics_per_class
 
-    return precision, recall, f1_score, TP, TN, FP, FN
 
 def display_images_with_labels(inputs, ground_truth_labels, predicted_labels):
     tensor_to_pil_image = transforms.ToPILImage()
@@ -91,20 +114,46 @@ def display_images_with_labels(inputs, ground_truth_labels, predicted_labels):
 
 
 def main():
-
     model = Model().to(device)
 
-    batch_size = 24  # Set an appropriate batch size
+    batch_size = 24
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=True)
 
     # Load the trained model
     checkpoint = torch.load('models/checkpoint.pkl', map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
 
-    precision, recall, f1_score, TP, TN, FP, FN = evaluate_model(model, test_loader, device)
+    metrics_per_class = evaluate_model(model, test_loader, device, num_classes=len(label_mapping))
+    
+    # Convert torch.int64 to Python int for JSON serialization
+    metrics_per_class_json = []
+    for i, metrics in enumerate(metrics_per_class):
+        class_metrics = {
+            'class_index': i,
+            'class_label': get_key_by_value(label_mapping, i),
+            'metrics': {
+                'precision': float(metrics['precision']),
+                'recall': float(metrics['recall']),
+                'f1_score': float(metrics['f1_score']),
+                'TP': int(metrics['TP']),
+                'TN': int(metrics['TN']),
+                'FP': int(metrics['FP']),
+                'FN': int(metrics['FN'])
+            }
+        }
+        metrics_per_class_json.append(class_metrics)
 
-    print(f'TP = {TP}, TN = {TN}, FP = {FP}, FN = {FN}')
-    print(f'Precision = {precision}, Recall = {recall}, F1 score = {f1_score}')
+    # Save metrics to a JSON file
+    metrics_filename = 'metrics.json'
+    with open(metrics_filename, 'w') as metrics_file:
+        json.dump(metrics_per_class_json, metrics_file, indent=2)
+    print(f'Metrics saved to {metrics_filename}')
+
+
+    for i, metrics in enumerate(metrics_per_class):
+        print(f'\nMetrics for class {i}:')
+        print(f'TP = {metrics["TP"]}, TN = {metrics["TN"]}, FP = {metrics["FP"]}, FN = {metrics["FN"]}')
+        print(f'Precision = {metrics["precision"]}, Recall = {metrics["recall"]}, F1 score = {metrics["f1_score"]}')
 
     # Display images with labels
     inputs, labels_gt = next(iter(test_loader))
@@ -119,8 +168,8 @@ def main():
 
     labels_gt = [str(label) for label in labels_gt]
 
-
     display_images_with_labels(inputs.cpu(), labels_gt, predicted_labels)
+
 
 if __name__ == "__main__":
     main()

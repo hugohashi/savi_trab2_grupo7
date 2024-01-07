@@ -8,7 +8,7 @@ import numpy as np
 import json
 import copy
 
-from model import Model
+from helping_classes.model import Model
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

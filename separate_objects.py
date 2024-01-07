@@ -73,12 +73,6 @@ def main():
     # cortar a pcd para conter apenas os pontos dentro da caixa
     pcd_cropped = pcd_downsampled.crop(box)
 
-
-
-
-
-
-
     #remover plano mesa -> Plane segmentation - RANSAC
     #Para detetar os pontos que pertencem à mesa (1000 iterações, porque quantas mais, mais facil é identificar o chão, visto que é o maior plano, logo tem mais pontos!)
     plane_model, inliers = pcd_cropped.segment_plane(distance_threshold = 0.01, ransac_n = 3, num_iterations = 100)
@@ -93,8 +87,8 @@ def main():
 
     groups = list(set(labels))
 
-    colormap = cm.Set1(range(0, len(groups)))
-    groups.remove(-1)
+    #colormap = cm.Set1(range(0, len(groups)))
+    #groups.remove(-1)
 
     objects_point_clouds = []
 
@@ -105,40 +99,19 @@ def main():
         object_point_cloud = point_cloud_objects.select_by_index(group_idx, invert=False)
         
         #pintar de uma dada cor o grupo encontrado
-        color = colormap[group_n, 0:3]
-        object_point_cloud.paint_uniform_color(color)
+        #color = colormap[group_n, 0:3]
+        #object_point_cloud.paint_uniform_color(color)
         objects_point_clouds.append(object_point_cloud)
+    
+    frame = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.3, origin=np.array([0., 0., 0.]))
 
-    #----------------------
-    # Visualization 
-    #----------------------
-    #criar sistema de coordenadas no sitio correto, apos mover a point_cloud
-    frame_table = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5, origin=np.array([0., 0., 0.]))
-    entities = []
-    entities.append(frame_table)
-    entities.extend(objects_point_clouds)
-    o3d.visualization.draw_geometries(entities,
-                                        zoom=0.3412,
-                                        front=view['trajectory'][0]['front'],
-                                        lookat=view['trajectory'][0]['lookat'],
-                                        up=view['trajectory'][0]['up'])
+    outliers = point_cloud_objects
+    print(outliers)
     
-    
-    
-    
-
-    outliers = pcd_downsampled
-
-     
     cluster_idxs = list(outliers.cluster_dbscan(eps=0.03, min_points=10, print_progress=True))
     object_idxs = list(set(cluster_idxs))
     object_idxs.remove(-1)
 
-
-    number_of_objects = len(object_idxs)
-
-    color = []
-    dimensions = []
     objects = []
     for object_idx in object_idxs:
 
@@ -159,7 +132,22 @@ def main():
             objects.append(d) # add the dict of this object to the list
         else:
             continue
-
+    
+    #----------------------
+    # Visualization 
+    #----------------------
+        
+        
+    entities = []
+    
+    entities.append(frame)
+    
+    # Draw bbox
+    bbox_to_draw = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(box)
+    entities.append(bbox_to_draw)
+    dimensions = []
+    # Draw objects
+    color = []
     for object_idx, object in enumerate(objects):
         entities.append(object['points'])
 
@@ -193,6 +181,21 @@ def main():
         bbox_to_draw_object_processed = o3d.geometry.AxisAlignedBoundingBox.get_axis_aligned_bounding_box(object['points'])
         entities.append(bbox_to_draw_object_processed)
 
+    entities.append(pcd_downsampled)   
+ 
+    #criar sistema de coordenadas no sitio correto, apos mover a point_cloud
+    frame_table = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5, origin=np.array([0., 0., 0.]))
+    entities = []
+    entities.append(frame_table)
+    entities.extend(objects_point_clouds)
+    o3d.visualization.draw_geometries(entities,
+                                        zoom=0.3412,
+                                        front=view['trajectory'][0]['front'],
+                                        lookat=view['trajectory'][0]['lookat'],
+                                        up=view['trajectory'][0]['up'])
+    
+    
+    
 
 if __name__ == "__main__":
     main()

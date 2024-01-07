@@ -23,7 +23,6 @@ class ObjectProperties():
     def __init__(self, object):
         self.idx = object['idx']
         self.center = object['center']
-
         self.point_cloud = object['points']
         pc_points = self.point_cloud.points
         self.points = np.asarray(pc_points)

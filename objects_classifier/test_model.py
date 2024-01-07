@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+This file is used to get the metrics of the model, such as True Positive, True Negative, False Positive, False Negative, F1, Recall, and Precision
+It also saves a dictionary with the results of every file with its ground truth and predicted labels
+In the end it shows some pictures with the ground truth and predicted labels
+"""
+
 import json
 import torch
 from sklearn.metrics import confusion_matrix
@@ -7,8 +13,8 @@ import torch.nn.functional as F
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from dataset import Dataset
-from model import Model
+from helping_classes.dataset import Dataset
+from helping_classes.model import Model
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -23,7 +29,6 @@ print(f'Used {len(test_filenames)} for testing ')
 
 with open('json_files/label_mapping.json', 'r') as f:
     label_mapping = json.load(f)
-
 
 # Get the key of a dictionary from its value 
 def get_key_by_value(dictionary, target_value):

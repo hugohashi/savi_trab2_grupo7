@@ -10,7 +10,7 @@ from more_itertools import locate
 def main():
     #escolher cena aleatoriamente
     #scene_number = random.choice(list(views.keys()))
-    scene_number = '04'
+    scene_number = '14'
 
     #Converter imagem em point cloud
     filename_rgb = f'images/{scene_number}-color.png'
@@ -36,13 +36,15 @@ def main():
     T = np.eye(4)
 
     #Adicionar Rotação
-    #T[:3, :3] = pcd.get_rotation_matrix_from_xyz((110 * math.pi /180 , 0 , 40*math.pi / 180))
+    T[:3, :3] = pcd.get_rotation_matrix_from_xyz((105 * math.pi /180 , 0*math.pi / 180 , 0*math.pi / 180))
 
     #Adicionar Translação
-    T[0:3, 3] = [-0.1, -0.5, 1.5]
+    T[0:3, 3] = [0, 0.27, 1.4]
 
     #Tranformar a pcd - para que o sistema de coordenadas esteja no centro da mesa
     pcd_downsampled = pcd.transform(np.linalg.inv(T))
+
+    print(T)
 
     #Apply transformation
     #pcd_downsampled = pcd.transform(np.linalg.inv(T))

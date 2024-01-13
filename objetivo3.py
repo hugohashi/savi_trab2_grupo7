@@ -13,8 +13,8 @@ def main():
     scene_number = '04'
 
     #Converter imagem em point cloud
-    filename_rgb = f'data/images/{scene_number}-color.png'
-    filename_depth = f'data/images/{scene_number}-depth.png'
+    filename_rgb = f'images/{scene_number}-color.png'
+    filename_depth = f'images/{scene_number}-depth.png'
 
     color_raw = o3d.io.read_image(filename_rgb)
     depth_raw = o3d.io.read_image(filename_depth)

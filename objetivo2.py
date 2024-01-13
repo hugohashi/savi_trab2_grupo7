@@ -14,7 +14,8 @@ def main():
     #escolher cena aleatoriamente
     scene_number = random.choice(list(views.keys()))
 
-    pcd_original = o3d.io.read_point_cloud(f"data/scenes/rgbd-scenes-v2/pc/{scene_number}.ply")
+    #f"data/scenes/rgbd-scenes-v2_pc/rgbd-scenes-v2/pc/{scene_number}.ply")
+    pcd_original = o3d.io.read_point_cloud(f'/home/rita/Desktop/savi_trab2_grupo7/data/rgbd-scenes-v2/pc/{scene_number}.ply')
 
     pcd_downsampled = copy.deepcopy(pcd_original)
     #Downsample using voxel grid ------------------------------------
@@ -32,7 +33,7 @@ def main():
     np_vertices = np.ndarray((8, 3), dtype=float)
 
     sx = sy = 0.5
-    sz_top = 0.6
+    sz_top = 0.5
     sz_bottom = -0.05
 
     #top vertices
@@ -66,7 +67,7 @@ def main():
     point_cloud_objects = pcd_cropped.select_by_index(inliers, invert = True)
 
     #Clustering - separar objetos!
-    labels = point_cloud_objects.cluster_dbscan(eps=0.02, min_points=500, print_progress=True)
+    labels = point_cloud_objects.cluster_dbscan(eps=0.02, min_points=100, print_progress=True)
 
     groups = list(set(labels))
 
@@ -74,6 +75,8 @@ def main():
     groups.remove(-1)
 
     objects_point_clouds = []
+    caixas = []
+    i = 0
 
     for group_n in groups:
         #encontrar os indices dos objetos que pertencem a um dado grupo!
@@ -81,9 +84,17 @@ def main():
 
         object_point_cloud = point_cloud_objects.select_by_index(group_idx, invert=False)
         
-        #pintar de uma dada cor o grupo encontrado
-        color = colormap[group_n, 0:3]
-        object_point_cloud.paint_uniform_color(color)
+        #pintar de uma dada cor a caixa em volta do objeto encontrado
+        caixa = object_point_cloud.get_oriented_bounding_box()
+        caixa.color = colormap[group_n, 0:3]
+
+        #guardar imagem do objeto
+        #<scene>.pose - where each line is the camera pose (a,b,c,d,x,y,z) for one video frame. 
+        #a,b,c,d is the camera orientation expressed as a quarternion, 
+        #and x,y,z is the camera position in the global coordinate frame. 
+        #The camera pose of the first frame of each video is always the origin of the global coordinate frame.
+
+        caixas.append(caixa)      
         objects_point_clouds.append(object_point_cloud)
 
     #----------------------
@@ -91,10 +102,12 @@ def main():
     #----------------------
     #criar sistema de coordenadas
     frame = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5, origin=np.array([0., 0., 0.]))
-    pcd_cropped.paint_uniform_color([0.3, 0.3, 0.3])
-    entities = [pcd_cropped]
+    #pcd_cropped.paint_uniform_color([0.3, 0.3, 0.3])
+    #entities = [pcd_cropped]
+    entities = []
     entities.append(frame)
     entities.extend(objects_point_clouds)
+    entities.extend(caixas)
     o3d.visualization.draw_geometries(entities,
                                     zoom=0.3412,
                                     front=views[scene_number]['trajectory'][0]['front'],

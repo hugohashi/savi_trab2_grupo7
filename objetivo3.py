@@ -1,8 +1,10 @@
 from views import *
 import open3d as o3d
+import cv2
 import copy
 import numpy as np
 from PIL import Image
+import matplotlib.pyplot as plt
 import math
 import random
 from matplotlib import cm
@@ -16,6 +18,7 @@ def main():
     filename_rgb = f'images/{scene_number}-color.png'
     filename_depth = f'images/{scene_number}-depth.png'
 
+    image_rgb = cv2.imread(filename_rgb)
     color_raw = o3d.io.read_image(filename_rgb)
     depth_raw = o3d.io.read_image(filename_depth)
 
@@ -97,13 +100,43 @@ def main():
         caixa = object_point_cloud.get_oriented_bounding_box()
         caixa.color = colormap[group_n, 0:3]
 
-        #guardar imagem do objeto - o indice dos pontos que pertencem ao objeto são correspondentes aos pixeis da image
+        #sub imagem
+        #desfazer transformação
+        T_inv = np.linalg.inv(T)
+        object_point_cloud = object_point_cloud.transform(np.linalg.inv(T_inv))
 
-        #o3d.visualization.draw_geometries([sub_image])
+        # Get the 3D coordinates of the points in the object_point_cloud
+        umax = None
+        umin = None
+        vmax = None
+        vmin = None
+        for (x, y, z) in object_point_cloud.points:
+            u = round(x*525/z + 320)
+            v = round(y*525/z + 240)
+            if (umax and umin) is None:
+                umax = u
+                umin = u
+            elif u > umax:
+                umax = u
+            elif u < umin:
+                umin = u
+            if (vmax and vmin) is None:
+                vmax = v
+                vmin = v
+            elif v > vmax:
+                vmax = v
+            elif v < vmin:
+                vmin = v       
 
-        caixas.append(caixa)      
+        img = image_rgb[vmin:vmax, umin:umax]
+        cv2.imwrite(f'object{i}_scene{scene_number}.png', img)
+
+        #repor transformação
+        object_point_cloud = object_point_cloud.transform(np.linalg.inv(T))
+
+        caixas.append(caixa)
         objects_point_clouds.append(object_point_cloud)
-        i = i+1
+        i = i + 1
 
     #----------------------
     # Visualization 

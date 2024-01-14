@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-
-from copy import deepcopy
-import open3d as o3d
-import math
-import numpy as np
-import os
-import cv2
-from more_itertools import locate
-
 import math
 from copy import deepcopy
 import open3d as o3d
@@ -104,9 +95,13 @@ class audioprocessing():
     def loadaudio(self, lista_audio, cenario, dimensions):
         
         cleaned_fruits = [fruit.split("_")[0] for fruit in lista_audio]
-        # text = ""
-        # for i, fruit in enumerate(cleaned_fruits):
-        #     text += "The object number " + str(i+1) + " I think is a " + fruit + ". "        
+       
+        if len(cleaned_fruits) != len(dimensions):
+            print("Error: Length mismatch between cleaned_fruits and dimensions")
+            print("cleaned_fruits length:", len(cleaned_fruits))
+            print("dimensions length:", len(dimensions))
+            return
+        
         print(cleaned_fruits)
         print(lista_audio)
         print(len(dimensions))
@@ -114,12 +109,12 @@ class audioprocessing():
         for i in range(len(dimensions)):
             dim = dimensions[i]
             fruta = cleaned_fruits[i]
-            text += "The object number " + str(int(i + 1)) + ", a " + fruta + ", has dimensions of " + str(round(dim[0], 2)) + " x " + str(round(dim[1], 2)) + "."
+            text += "starting with the object number " + str(int(i + 1)) + ", a " + fruta + ", has dimensions of " + str(round(dim[0], 2)) + " x " + str(round(dim[1], 2)) + "."
         
         pygame.mixer.init()
 
         # Gerar a descrição da cena
-        text_final = "We are looking ate the scene "+str(cenario)+" we have "+ str(len(lista_audio))+ " objects processed in the scene "+str(text)+" i think its everything if you have any questions you may ask to my creators, thanks professor i hope you like it"
+        text_final = "We are looking at the scene "+str(cenario)+" and I recognized "+ str(len(lista_audio))+ " objects processed in the scene "+str(text)+ "thank you for listening, hope I did not miss anything."
         print(text_final)
         
         tts = gTTS(text_final, lang='en')

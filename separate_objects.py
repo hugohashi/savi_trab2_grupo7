@@ -128,7 +128,7 @@ def main():
     
 
 
-    path = 'data/Data_objects'
+    path = 'Data_objects'
     files = [f for f in os.listdir(path) if f.endswith('.pcd')]
 
     objects_point_clouds = []
@@ -198,11 +198,10 @@ def main():
                             object['rmse'] = reg_p2p.inlier_rmse
                             object['indexed'] = model_idx
                             object["fitness"] = reg_p2p.fitness
-                            print(object)
+                            
                             
 
  
-    
     #----------------------
     # Visualization 
     #----------------------

@@ -1,3 +1,5 @@
+#isola os objetos e retira uma imagem de cada objeto
+
 from views import *
 import open3d as o3d
 import cv2

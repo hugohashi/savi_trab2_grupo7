@@ -109,12 +109,12 @@ class audioprocessing():
         for i in range(len(dimensions)):
             dim = dimensions[i]
             fruta = cleaned_fruits[i]
-            text += "starting with the object number " + str(int(i + 1)) + ", a " + fruta + ", has dimensions of " + str(round(dim[0], 2)) + " x " + str(round(dim[1], 2)) + "."
+            text += "the object number " + str(int(i + 1)) + ", a " + fruta + ", has dimensions of " + str(round(dim[0], 2)) + " x " + str(round(dim[1], 2)) + "."
         
         pygame.mixer.init()
 
         # Gerar a descrição da cena
-        text_final = "We are looking at the scene "+str(cenario)+" and I recognized "+ str(len(lista_audio))+ " objects processed in the scene "+str(text)+ "thank you for listening, hope I did not miss anything."
+        text_final = "We are looking at the scene "+str(cenario)+" and I recognized "+ str(len(lista_audio))+ " objects processed in the scene, starting with "+str(text)+ "thank you for listening, hope I did not miss anything."
         print(text_final)
         
         tts = gTTS(text_final, lang='en')

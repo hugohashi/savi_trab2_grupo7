@@ -128,11 +128,9 @@ def main():
     
 
 
-    path = 'data/Data_objects'
-    files = [f for f in os.listdir(path) if f.endswith('.pcd')]
 
     objects_point_clouds = []
-    list_pcd = {}
+    
     for group_n in groups:
         #encontrar os indices dos objetos que pertencem a um dado grupo!
         group_idx = list(locate(labels, lambda x: x==group_n))
@@ -145,6 +143,9 @@ def main():
         objects_point_clouds.append(object_point_cloud)
         #list_pcd[group_n]= {'object_point_cloud': object_point_cloud,'indexed': group_n}
     
+    path = 'Data_objects'
+    files = [f for f in os.listdir(path) if f.endswith('.pcd')]
+    list_pcd = {}
     for i, file in enumerate(files):
         variable_name = os.path.splitext(file)[0]
         point_cloud = o3d.io.read_point_cloud(os.path.join(path, file))
@@ -198,11 +199,10 @@ def main():
                             object['rmse'] = reg_p2p.inlier_rmse
                             object['indexed'] = model_idx
                             object["fitness"] = reg_p2p.fitness
-                            print(object)
+                            
                             
 
  
-    
     #----------------------
     # Visualization 
     #----------------------

@@ -9,40 +9,20 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import argparse
 from classes import *
-
-
-view = {
-    "class_name": "ViewTrajectory",
-    "interval": 29,
-    "is_loop": False,
-    "trajectory":
-        [
-            {
-                "boundingbox_max": [2.6540005122611348, 2.3321821423160629, 0.85104994623420782],
-                "boundingbox_min": [-2.5261458770339673, -2.1656718060235378, -0.55877501755379944],
-                "field_of_view": 60.0,
-                "front": [0.75672239933786944, 0.34169632162348007, 0.55732830013316348],
-                "lookat": [0.046395260625899069, 0.011783639768603466, -0.10144691776517496],
-                "up": [-0.50476400916821107, -0.2363660920597864, 0.83026764695055955],
-                "zoom": 0.30119999999999997
-            }
-        ],
-    "version_major": 1,
-    "version_minor": 0
-}
+from views_pc import *
 
 def main():
-    # -----------------------------------------------------------------
-    # Initialization
-    # -----------------------------------------------------------------
-    pcd_downsampled = o3d.io.read_point_cloud('data/scenes/rgbd-scenes-v2/pc/01.ply')
+    #escolher a cena aleatoriamente
+    scene_number = random.choice(list(views_pc.keys()))
+    
+    pcd_downsampled = o3d.io.read_point_cloud(f'data/scenes/rgbd-scenes-v2/pc/{scene_number}.ply')
 
     # -----------------------------------------------------------------
     # Execution
     # -----------------------------------------------------------------
 
     # Matriz transformação
-    T = [[0.766, -0.643, 0, -0.03], [-0.22, -0.262, -0.94, -0.156], [0.604, 0.72, -0.342, 1.306], [0, 0, 0, 1]]
+    T = views_pc['T']
 
     # Tranformar a pcd 
     pcd_downsampled = pcd_downsampled.transform(np.linalg.inv(T))
@@ -83,25 +63,12 @@ def main():
     a, b, c, d = plane_model
 
     #nuvem só com os objetos em cima da mesa (outliers)
-    point_cloud_objects = pcd_cropped.select_by_index(inliers, invert = True)
+    outliers = pcd_cropped.select_by_index(inliers, invert = True)
 
     #Clustering - separar objetos!
-    labels = point_cloud_objects.cluster_dbscan(eps=0.02, min_points=500, print_progress=True)
+    cluster_idxs = list(point_cloud_objects.cluster_dbscan(eps=0.02, min_points=500, print_progress=True))
 
-    groups = list(set(labels))
-
-    #colormap = cm.Set1(range(0, len(groups)))
-    #groups.remove(-1)
-
-
-
-    frame = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.3, origin=np.array([0., 0., 0.]))
-
-    outliers = point_cloud_objects
-    print(outliers)
-    
-    cluster_idxs = list(outliers.cluster_dbscan(eps=0.03, min_points=200, print_progress=True))
-    object_idxs = list(set(cluster_idxs))
+    object_idxs = list(set(labels))
     object_idxs.remove(-1)
 
     objects = []
@@ -125,24 +92,6 @@ def main():
         else:
             continue
 
-    
-
-
-
-    objects_point_clouds = []
-    
-    for group_n in groups:
-        #encontrar os indices dos objetos que pertencem a um dado grupo!
-        group_idx = list(locate(labels, lambda x: x==group_n))
-
-        object_point_cloud = point_cloud_objects.select_by_index(group_idx, invert=False)
-        
-        #pintar de uma dada cor o grupo encontrado
-        #color = colormap[group_n, 0:3]
-        #object_point_cloud.paint_uniform_color(color)
-        objects_point_clouds.append(object_point_cloud)
-        #list_pcd[group_n]= {'object_point_cloud': object_point_cloud,'indexed': group_n}
-    
     path = 'Data_objects'
     files = [f for f in os.listdir(path) if f.endswith('.pcd')]
     list_pcd = {}
@@ -155,7 +104,6 @@ def main():
     for variable_name, info in list_pcd.items():
         list_pcd_model.append(info["point_cloud"])
         
-    
     for object_idx, object in enumerate(objects):
             object['rmse'] = 10
             object['indexed'] = 100
@@ -205,13 +153,8 @@ def main():
  
     #----------------------
     # Visualization 
-    #----------------------
-        
-        
+    #----------------------      
     entities = []
-    
-    entities.append(frame)
-    
     # Draw bbox
     bbox_to_draw = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(box)
     entities.append(bbox_to_draw)
@@ -238,10 +181,7 @@ def main():
             min_colours[(rd + gd + bd)] = name
         closest_color = min_colours[min(min_colours.keys())]
 
-
         ## tentar descobrir a moda da cor dos pontos
-
-
 
         try:
             actual_name = webcolors.rgb_to_name(color_rgb)
@@ -257,17 +197,12 @@ def main():
         entities.append(bbox_to_draw_object_processed)
 
     entities.append(pcd_downsampled)   
- 
-    #criar sistema de coordenadas no sitio correto, apos mover a point_cloud
-    frame_table = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.5, origin=np.array([0., 0., 0.]))
-   # entities = []
-    entities.append(frame_table)
     entities.extend(objects_point_clouds)
     o3d.visualization.draw_geometries(entities,
-                                        zoom=0.3412,
-                                        front=view['trajectory'][0]['front'],
-                                        lookat=view['trajectory'][0]['lookat'],
-                                        up=view['trajectory'][0]['up'])
+                                        zoom=view_pc['trajectory'][0]['zoom'],
+                                        front=view_pc['trajectory'][0]['front'],
+                                        lookat=view_pc['trajectory'][0]['lookat'],
+                                        up=view_pc['trajectory'][0]['up'])
 
 
 
@@ -284,7 +219,6 @@ def main():
     #image = ImageProcessing()
     #result = image.loadPointCloud(centers, args.cropped, number)
     lista_audio = []
-
  
     app = gui.Application.instance
     app.initialize() # create an open3d app
@@ -296,7 +230,6 @@ def main():
     material = rendering.MaterialRecord()
     material.shader = "defaultUnlit"
     material.point_size = 2 * w.scaling
-
 
 
     for entity_idx, entity in enumerate(entities):

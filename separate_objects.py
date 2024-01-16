@@ -94,7 +94,6 @@ def main():
     #groups.remove(-1)
 
 
-
     frame = o3d.geometry.TriangleMesh().create_coordinate_frame(size=0.3, origin=np.array([0., 0., 0.]))
 
     outliers = point_cloud_objects

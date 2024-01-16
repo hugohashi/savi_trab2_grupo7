@@ -46,18 +46,18 @@ class ObjectProperties():
         return (width, height)
 
     def getColor(self, idx):  
-        idx = idx + 1
-        image_name = 'image' + str(idx) + '.png'
+        idx = idx 
+        image_name = 'objetos/object' + str(idx) + '.png'
 
         # Creating o3d windows with only one object to then process in OpenCV
-        vis = o3d.visualization.Visualizer()
-        vis.create_window()
-        vis.add_geometry(self.point_cloud)
-        vis.get_view_control().rotate(0, np.pi / 4) # rotate around y-axis
-        vis.get_view_control().set_zoom(3.0) #set the zoom level
-        vis.run()  # user changes the view and press "q" to terminatem)
-        vis.capture_screen_image(image_name)
-        vis.destroy_window()
+        #vis = o3d.visualization.Visualizer()
+        #vis.create_window()
+        #vis.add_geometry(self.point_cloud)
+        #vis.get_view_control().rotate(0, np.pi / 4) # rotate around y-axis
+        #vis.get_view_control().set_zoom(3.0) #set the zoom level
+        #vis.run()  # user changes the view and press "q" to terminatem)
+        #vis.capture_screen_image(image_name)
+        #vis.destroy_window()
 
         # OpenCV processing
         img = cv2.imread(image_name)
@@ -72,11 +72,10 @@ class ObjectProperties():
             for j in range(img.shape[1]):
                 pixel = img[i, j]
 
-                if pixel[0] < 250 or pixel[1] < 250 or pixel[2] < 250:
-                    colored_pixels.append(pixel)
-                    b = b + pixel[0]
-                    g = g + pixel[1]
-                    r = r + pixel[2]
+                colored_pixels.append(pixel)
+                b = b + pixel[0]
+                g = g + pixel[1]
+                r = r + pixel[2]
 
         b = b/len(colored_pixels)
         g = g/len(colored_pixels)

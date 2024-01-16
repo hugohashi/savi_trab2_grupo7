@@ -137,8 +137,8 @@ def main():
             elif v < vmin:
                 vmin = v       
 
-        img = image_rgb[vmin:vmax, umin:umax]
-        cv2.imwrite(f'object{i}_scene{scene_number}.png', img)
+        img = image_rgb[vmin-20:vmax+20, umin-20:umax+20]
+        cv2.imwrite(f'objetos/object{i}.png', img)
 
         #repor transformação
         object_point_cloud = object_point_cloud.transform(np.linalg.inv(T))
@@ -159,73 +159,11 @@ def main():
         objects_point_clouds.append(object_point_cloud)
         i = i + 1
 
-    path = 'Data_objects'
-    files = [f for f in os.listdir(path) if f.endswith('.pcd')]
-
-    list_pcd = {}
-
-    for i, file in enumerate(files):
-        variable_name = os.path.splitext(file)[0]
-        point_cloud = o3d.io.read_point_cloud(os.path.join(path, file))
-        list_pcd[variable_name] = {'point_cloud': point_cloud, 'indexed': i} 
-    
-    list_pcd_model = []
-    for variable_name, info in list_pcd.items():
-        list_pcd_model.append(info["point_cloud"])
-        
-    
-    for group_n, object in enumerate(objects):
-            object['rmse'] = 10
-            object['indexed'] = 100
-            min_error = 0.03
-            for model_idx, models_object in enumerate(list_pcd_model): 
-                #print("Apply point-to-point ICP to object " + str(object['idx']) )
-
-                trans_init = np.asarray([[1, 0, 0, 0],
-                                        [0,1,0,0],
-                                        [0,0,1,0], 
-                                        [0.0, 0.0, 0.0, 1.0]])
-                reg_p2p = o3d.pipelines.registration.registration_icp(object['points'], models_object, 1.0, trans_init, o3d.pipelines.registration.TransformationEstimationPointToPoint(),
-                                                                    o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=2000))
-                
-                
-                # -----------------------------------------------------
-                # Start processing each object and respectiv properties
-                # -----------------------------------------------------
-                ##Bounding box to see better the comparation###
-                bbox_to_draw_object = o3d.geometry.AxisAlignedBoundingBox.get_axis_aligned_bounding_box(object['points'])
-                bbox_to_draw_object.color = (1, 0, 0)
-                bbox_to_draw_object_target = o3d.geometry.AxisAlignedBoundingBox.get_axis_aligned_bounding_box(models_object)
-                bbox_to_draw_object_target.color = (0, 1, 0)
-            
-                ##Get some information about the bound boxes###
-                Volume_source = o3d.geometry.AxisAlignedBoundingBox.volume(bbox_to_draw_object)
-                Volume_target = o3d.geometry.AxisAlignedBoundingBox.volume(bbox_to_draw_object_target)
-                
-                # ------------------------------------------
-                # Doing Some match for better analysis
-                # ------------------------------------------
-                volume_compare = abs(Volume_source - Volume_target)  
-           
-                # ------------------------------------------
-                # Start associating each object 
-                # ------------------------------------------
-                
-                if  volume_compare < 0.006 :        
-                    if reg_p2p.inlier_rmse < min_error and reg_p2p.inlier_rmse != 0:
-                        if object['rmse'] > reg_p2p.inlier_rmse:
-                            object['rmse'] = reg_p2p.inlier_rmse
-                            object['indexed'] = model_idx
-                            object["fitness"] = reg_p2p.fitness
-
-    # Draw bbox
-    #bbox_to_draw = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(box)
-    #entities.append(bbox_to_draw)
-    
-    dimensions = []
-    # Draw objects
+    #cor e volume
     color = []
-    for groups, object in enumerate(objects):
+    dimensions = []
+    i = 0
+    for group_n, object in enumerate(objects):
 
         properties = ObjectProperties(object)
         size = properties.getSize()
@@ -254,58 +192,13 @@ def main():
         except ValueError:
             closest_name = closest_color
             actual_name = None
-        print(" \n" "This object's volume is " + str(volume))
-        print("This object's approximate color is " + str(closest_name) + ' with ' + str(color_rgb) + ' RGB value')
+        print(" \n" f"The object {i} volume is " + str(volume))
+        print(f"The object {i} approximate color is " + str(closest_name) + ' with ' + str(color_rgb) + ' RGB value')
         color.append(closest_name)
+        i = i + 1
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--dataset_path", help="Select the path of the desire point cloud", default="Matias/Scenes/pc/03.ply", type=str)
-    args = parser.parse_args()
 
-    #file_name = args.dataset_path.split('/')[-1]
-    file_name = args.dataset_path.split('/')[-1]
-    number = file_name.split('.')[0]
-    scenario_name = str(number) 
-    #image = ImageProcessing()
-    #result = image.loadPointCloud(centers, args.cropped, number)
-    lista_audio = []
-
-    app = gui.Application.instance
-    app.initialize() # create an open3d app
-
-    #w = app.create_window("Open3D - 3D Text", 1920, 1080)
-    #widget3d = gui.SceneWidget()
-    #widget3d.scene = rendering.Open3DScene(w.renderer)
-    #widget3d.scene.set_background([0,0,0,1])  # set black background
-    #material = rendering.MaterialRecord()
-    #material.shader = "defaultUnlit"
-    #material.point_size = 2 * w.scaling
-
-    #for entity_idx, entity in enumerate(entities):
-    #    widget3d.scene.add_geometry("Entity " + str(entity_idx), entity, material)
-    # Draw labels
-    for group_n, object in enumerate(objects):
-        label_pos = [object['center'][0], object['center'][1], object['center'][2] + 0.15]
-        label_text = "Obj: " + object['idx']
-        for i, object_point_cloud in enumerate(list_pcd.values()):
-            print("objecto"+str(object["indexed"]))
-            print("o i: "+str(i))
-            if object['indexed'] == i:
-                variable_name = list(list_pcd.keys())[i]
-                print("nome da variável:", variable_name)
-                label_text += " "+variable_name
-                lista_audio.append(variable_name)
-        #label = widget3d.add_3d_label(label_pos, label_text)
-        label.color = gui.Color(255,0,0)
-        label.scale = 2
-    #bbox = widget3d.scene.bounding_box
-    #widget3d.setup_camera(60.0, bbox, bbox.get_center())
-    #w.add_child(widget3d)
-    app.run()
-    
-    #print(dimensions)
-    #print('.')
-    #print(lista_audio)
+    #visualização
 
     entities = [pcd_cropped]
     entities.extend([point_cloud_table])
@@ -316,10 +209,6 @@ def main():
                                     front=views[scene_number]['trajectory'][0]['front'],
                                     lookat=views[scene_number]['trajectory'][0]['lookat'],
                                     up=views[scene_number]['trajectory'][0]['up'])
-
-  # Inicialize audio processing
-    audio = audioprocessing()
-    audio_final = audio.loadaudio(lista_audio, number, dimensions)
 
 if __name__ == "__main__":
     main()

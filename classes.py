@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 from copy import deepcopy
+from uuid import RFC_4122
 import open3d as o3d
 import cv2
 import numpy as np
@@ -47,6 +48,39 @@ class ObjectProperties():
 
         return (width, height)
     
+    def getcolortry2(self,idx):
+        idx = idx 
+        path = 'objetos/object' + str(idx) + '.png'
+        img = cv2.imread(path)
+
+        data = img.reshape((-1, 3))
+        data = np.float32(data)
+
+        number_clusters = 5
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        flags = cv2.KMEANS_RANDOM_CENTERS
+        compactness, labels, centers = cv2.kmeans(data, number_clusters, None, criteria, 10, flags)
+
+        r1 = centers[0][2]
+        r2 = centers[1][2]
+        r3 = centers[2][2]
+
+        g1 = centers[0][1]
+        g2 = centers[1][1]
+        g3 = centers[2][1]
+
+        b1 = centers[0][0]
+        b2 = centers[1][0]
+        b3 = centers[2][0]
+
+        rgb1 = r1,g1,b1
+        rgb2 = r2,g2,b2
+        rgb3 = r3,g3,b3
+
+        
+        return (rgb1, rgb2, rgb3)
+        
+
     def getColortry(self, idx): 
         # Image idx
         idx = idx 
@@ -83,21 +117,6 @@ class ObjectProperties():
         return (dominant_color_rgb)
     
 
-    def rgb_to_name(self,rgb):
-            
-
-            r, g, b = cv2.split(rgb)
-            min_diff = float('inf')
-            
-            
-            for name, hex_value in webcolors.CSS21_HEX_TO_NAMES
-                #hex_rgb = tuple(int(hex_value[i:i+2], 16) for i in (1, 3, 5))
-                #diff = sum(abs(a - b) for a, b in zip(hex_rgb, (r, g, b)))
-                #if diff < min_diff:
-                    #min_diff = diff
-                    closest_name = name
-            return closest_name
-
     def getColor(self, idx):  
         idx = idx 
         image_name = 'objetos/object' + str(idx) + '.png'
@@ -125,33 +144,6 @@ class ObjectProperties():
         g = g/len(colored_pixels)
         r = r/len(colored_pixels)
         
-
-        ## try
-        #if   r>80 and r<80 and b>100 and b< 80 and g>100 and g<80:
-    
-        lower_red =np.array([0,0,200], dtype = "uint8")
-        upper_red =np.array([0,0,255], dtype = "uint8")
-
-        lower_yellow =np.array([0,0,200], dtype = "uint8")
-        upper_yellow =np.array([0,0,255], dtype = "uint8")
-
-        lower_green =np.array([0,0,200], dtype = "uint8")
-        upper_green =np.array([0,0,255], dtype = "uint8")
-
-        lower_black =np.array([0,0,200], dtype = "uint8")
-        upper_black =np.array([0,0,255], dtype = "uint8")
-
-        lower_white =np.array([0,0,200], dtype = "uint8")
-        upper_white =np.array([0,0,255], dtype = "uint8")
-
-        lower_blue =np.array([0,0,200], dtype = "uint8")
-        upper_blue =np.array([0,0,255], dtype = "uint8"
-                             )
-        mask = cv2.inRange(img, lower_red, upper_red)
-        detected_output = cv2.bitwise_and(img, img, mask = mask)
-
-
-        ##
 
         return (r,g,b)
     

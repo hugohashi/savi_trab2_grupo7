@@ -168,37 +168,46 @@ def main():
         properties = ObjectProperties(object)
         size = properties.getSize()
         volume = math.pi* size[0]**2 * size[1] #cylindrical volume, aproximation
-        
+        print(" \n" f"The object {i} volume is " + str(volume))
         
         dimensions.append(size)
         color_rgb = properties.getColor(group_n)
         color_rgb_try=properties.getColortry(group_n)
-        0
-        #actual_name_try= webcolors.rgb_to_name(color_rgb_try)
-        actual_name_try = properties.rgb_to_name(color_rgb_try)
+
         
+        rgb1,rgb2,rgb3 = properties.getcolortry2(group_n)
+        ttt= [rgb1,rgb2,rgb3]
         min_colours = {}
-        for key, name in webcolors.CSS21_HEX_TO_NAMES.items():#CSS3_HEX_TO_NAMES.items():
-            r_c, g_c, b_c = webcolors.hex_to_rgb(key)
-            rd = (r_c - color_rgb[0]) ** 2
-            gd = (g_c - color_rgb[1]) ** 2
-            bd = (b_c - color_rgb[2]) ** 2
-            min_colours[(rd + gd + bd)] = name
-        closest_color = min_colours[min(min_colours.keys())]
-
-
-        ## tentar descobrir a moda da cor dos pontos
         
+        
+        closest_names =[]
+        for p in ttt :
+            closest_name = None
+            for key, name in webcolors.CSS21_HEX_TO_NAMES.items():#CSS3_HEX_TO_NAMES.items():
+                #r, g, b = cv2.split(color_rgb_try)
+                
+               # r, g, b = cv2.split(p)
+                r, g, b = p
+                r, g, b = webcolors.hex_to_rgb(key)
+                rd = (r - color_rgb[0]) ** 2
+                gd = (g - color_rgb[1]) ** 2
+                bd = (b - color_rgb[2]) ** 2
+                min_colours[(rd + gd + bd)] = name
+            closest_color = min_colours[min(min_colours.keys())]        
 
-        try:
-            actual_name = webcolors.rgb_to_name(color_rgb)
-            closest_name = actual_name
-        except ValueError:
-            closest_name = closest_color
-            actual_name = None
-        print(" \n" f"The object {i} volume is " + str(volume))
-        print(f"The object {i} approximate color is " + str(actual_name_try) + ' with ' + str(color_rgb_try) + ' RGB value')
-        color.append(actual_name_try)
+            try:
+                actual_name = webcolors.rgb_to_name(color_rgb)
+                closest_name = actual_name
+            except ValueError:
+                closest_name = closest_color
+                actual_name = None
+            closest_names.append(closest_name)
+        
+        
+        print(f"The object {i} approximate colors is " + str(closest_names) + ' with ' + str(color_rgb_try) + ' RGB value')
+        
+        color.append(closest_name)
+
         i = i + 1
 
 

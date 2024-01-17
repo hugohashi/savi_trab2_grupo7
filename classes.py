@@ -7,6 +7,8 @@ import numpy as np
 import os
 from gtts import gTTS
 import pygame
+from scipy.spatial import distance
+import webcolors
 from more_itertools import locate
 
 class ObjectProperties():
@@ -44,20 +46,61 @@ class ObjectProperties():
         self.point_cloud.translate(self.center)
 
         return (width, height)
+    
+    def getColortry(self, idx): 
+        # Image idx
+        idx = idx 
+        image_name = 'objetos/object' + str(idx) + '.png'
+
+        # Load the PNG image
+        image = cv2.imread(image_name)
+
+        # Convert the image to the Lab color space
+
+        image_lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+
+
+        # Reshape the image into a list of pixels
+        pixels = image_lab.reshape((-1, 3))
+
+        # Calculate the mean 'L', 'a', and 'b' values
+        mean_color = np.mean(pixels, axis=0)
+
+        # Calculate the color distance between each pixel and the mean color
+
+        distances = [distance.euclidean(pixel, mean_color) for pixel in pixels]
+
+        # Find the pixel with the smallest color distance
+
+        dominant_pixel = pixels[np.argmin(distances)]
+
+        # Convert the dominant pixel to RGB for display
+
+        dominant_color_rgb = cv2.cvtColor(dominant_pixel.reshape((1, 1, 3)), cv2.COLOR_LAB2BGR)
+        dominant_color_rgb = cv2.cvtColor(dominant_color_rgb, cv2.COLOR_BGR2RGB)
+        
+
+        return (dominant_color_rgb)
+    
+
+    def rgb_to_name(self,rgb):
+            
+
+            r, g, b = cv2.split(rgb)
+            min_diff = float('inf')
+            
+            
+            for name, hex_value in webcolors.CSS21_HEX_TO_NAMES
+                #hex_rgb = tuple(int(hex_value[i:i+2], 16) for i in (1, 3, 5))
+                #diff = sum(abs(a - b) for a, b in zip(hex_rgb, (r, g, b)))
+                #if diff < min_diff:
+                    #min_diff = diff
+                    closest_name = name
+            return closest_name
 
     def getColor(self, idx):  
         idx = idx 
         image_name = 'objetos/object' + str(idx) + '.png'
-
-        # Creating o3d windows with only one object to then process in OpenCV
-        #vis = o3d.visualization.Visualizer()
-        #vis.create_window()
-        #vis.add_geometry(self.point_cloud)
-        #vis.get_view_control().rotate(0, np.pi / 4) # rotate around y-axis
-        #vis.get_view_control().set_zoom(3.0) #set the zoom level
-        #vis.run()  # user changes the view and press "q" to terminatem)
-        #vis.capture_screen_image(image_name)
-        #vis.destroy_window()
 
         # OpenCV processing
         img = cv2.imread(image_name)
@@ -68,10 +111,11 @@ class ObjectProperties():
         b = 0
         g = 0
         r = 0
-        for i in range(img.shape[0]):
-            for j in range(img.shape[1]):
+        
+        for i in range(img.shape[0]): # height
+            for j in range(img.shape[1]): #width
                 pixel = img[i, j]
-
+                
                 colored_pixels.append(pixel)
                 b = b + pixel[0]
                 g = g + pixel[1]
@@ -80,8 +124,37 @@ class ObjectProperties():
         b = b/len(colored_pixels)
         g = g/len(colored_pixels)
         r = r/len(colored_pixels)
+        
+
+        ## try
+        #if   r>80 and r<80 and b>100 and b< 80 and g>100 and g<80:
+    
+        lower_red =np.array([0,0,200], dtype = "uint8")
+        upper_red =np.array([0,0,255], dtype = "uint8")
+
+        lower_yellow =np.array([0,0,200], dtype = "uint8")
+        upper_yellow =np.array([0,0,255], dtype = "uint8")
+
+        lower_green =np.array([0,0,200], dtype = "uint8")
+        upper_green =np.array([0,0,255], dtype = "uint8")
+
+        lower_black =np.array([0,0,200], dtype = "uint8")
+        upper_black =np.array([0,0,255], dtype = "uint8")
+
+        lower_white =np.array([0,0,200], dtype = "uint8")
+        upper_white =np.array([0,0,255], dtype = "uint8")
+
+        lower_blue =np.array([0,0,200], dtype = "uint8")
+        upper_blue =np.array([0,0,255], dtype = "uint8"
+                             )
+        mask = cv2.inRange(img, lower_red, upper_red)
+        detected_output = cv2.bitwise_and(img, img, mask = mask)
+
+
+        ##
 
         return (r,g,b)
+    
     
 
 class audioprocessing():

@@ -167,11 +167,15 @@ def main():
 
         properties = ObjectProperties(object)
         size = properties.getSize()
-        volume = math.pi* size[0]**2 * size[1] #cylindrical volume
-        #forlmula não está correta, aporximiação grosseira
+        volume = math.pi* size[0]**2 * size[1] #cylindrical volume, aproximation
+        
         
         dimensions.append(size)
         color_rgb = properties.getColor(group_n)
+        color_rgb_try=properties.getColortry(group_n)
+        0
+        #actual_name_try= webcolors.rgb_to_name(color_rgb_try)
+        actual_name_try = properties.rgb_to_name(color_rgb_try)
         
         min_colours = {}
         for key, name in webcolors.CSS21_HEX_TO_NAMES.items():#CSS3_HEX_TO_NAMES.items():
@@ -184,7 +188,7 @@ def main():
 
 
         ## tentar descobrir a moda da cor dos pontos
-
+        
 
         try:
             actual_name = webcolors.rgb_to_name(color_rgb)
@@ -193,8 +197,8 @@ def main():
             closest_name = closest_color
             actual_name = None
         print(" \n" f"The object {i} volume is " + str(volume))
-        print(f"The object {i} approximate color is " + str(closest_name) + ' with ' + str(color_rgb) + ' RGB value')
-        color.append(closest_name)
+        print(f"The object {i} approximate color is " + str(actual_name_try) + ' with ' + str(color_rgb_try) + ' RGB value')
+        color.append(actual_name_try)
         i = i + 1
 
 

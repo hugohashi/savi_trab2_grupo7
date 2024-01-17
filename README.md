@@ -21,7 +21,7 @@ Este dataset tem também anotações dos objetos na cena.
 ### Objetivo 3 - Classificação de objetos na cena
 3.1 - Através do ponto anterior, extrair uma sub-imagem que contenha apenas o objeto.
 
-
+![Image](objetos/object0.png) ![Image](objetos/object1.png) ![Image](objetos/object2.png) ![Image](objetos/object3.png) ![Image](objetos/object4.png)
 
 3.2 - Dar a imagem extraída à rede de classificação anteriormente desenvolvida. (Outra solução será treinar uma rede de classificação que utilize informação tridimensional para o reconhecimento de objetos.)
 

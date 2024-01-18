@@ -306,8 +306,8 @@ def main():
         label_pos = [object['center'][0], object['center'][1], object['center'][2] + 0.15]
         label_text = "Obj: " + object['idx']
         for i, object_point_cloud in enumerate(list_pcd.values()):
-            print("objecto"+str(object["indexed"]))
-            print("o i: "+str(i))
+            #rint("objecto"+str(object["indexed"]))
+            #print("o i: "+str(i))
             if object['indexed'] == i:
                 variable_name = list(list_pcd.keys())[i]
                 print("nome da variável:", variable_name)
@@ -321,12 +321,12 @@ def main():
     w.add_child(widget3d)
     app.run()
     
-    print(dimensions)
-    print('.')
-    print(lista_audio)
+    #print(dimensions)
+    #print('.')
      # Inicialize audio processing
     audio = audioprocessing()
     audio_final = audio.loadaudio(lista_audio, number, dimensions)
 
 if __name__ == "__main__":
     main()
+    

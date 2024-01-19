@@ -1,26 +1,181 @@
-#isola os objetos e retira uma imagem de cada objeto
 
+#!/usr/bin/env python3
+
+import os
 from views import *
 import open3d as o3d
 import cv2
-import copy
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
 import math
 import random
 from matplotlib import cm
 from more_itertools import locate
 import webcolors
-from open3d.visualization import gui
-from open3d.visualization import rendering
-import argparse
 from classes import *
+
+#escolher cena aleatoriamente
+scene_number = random.choice(list(views.keys()))
+
+##################################################### OBJECTIVE 2 ###########################################################################
+
+########### Isolate every object in the scene ###########
+
+def isolate_objects():
+    pass
+
+########### Isolate every object in the scene ###########
+
+
+########### Get color and size of an object ###########
+
+def get_object_color(idx):  
+
+        image_name = f'objetos/scene{scene_number}_object{idx}'
+
+        idx += 1
+
+        # OpenCV processing
+        img = cv2.imread(image_name)
+        
+        # print(str(img))
+        colored_pixels = []
+
+        b = 0
+        g = 0
+        r = 0
+        for i in range(img.shape[0]):
+            for j in range(img.shape[1]):
+                pixel = img[i, j]
+
+                if pixel[0] < 250 or pixel[1] < 250 or pixel[2] < 250:
+                    colored_pixels.append(pixel)
+                    b = b + pixel[0]
+                    g = g + pixel[1]
+                    r = r + pixel[2]
+
+        b = b/len(colored_pixels)
+        g = g/len(colored_pixels)
+        r = r/len(colored_pixels)
+
+        return (r,g,b)
+
+def get_object_size(object):
+        object['points'].translate(-object['center'])
+        pc_points_centered = object['points'].points
+        points = np.asarray(pc_points_centered)
+        
+        max_dist_from_center = 0
+        max_z = -1000
+        min_z = 1000
+        for point in points:
+            dist_from_center = math.sqrt(point[0]**2 + point[1]**2)
+
+            if dist_from_center >= max_dist_from_center:
+                max_dist_from_center = dist_from_center
+
+            z = point[2]
+            if z >= max_z:
+                max_z = z
+            elif z <= min_z:
+                min_z = z
+        
+        width = max_dist_from_center*2
+        height = abs(max_z - min_z)
+
+        object['points'].translate(object['center'])
+
+        return (width, height)
+
+########### Get every property of an object ###########
+
+##################################################### OBJECTIVE 2 ###########################################################################
+
+
+
+##################################################### OBJECTIVE 3 ###########################################################################
+
+import json
+import torch
+import torch.nn.functional as F
+from torchvision import transforms
+from PIL import Image
+
+from objects_classifier.helping_classes.model import Model
+
+# Open file with objects' labels and indexes
+with open('objects_classifier/json_files/label_mapping.json', 'r') as f:
+    label_mapping = json.load(f)
+
+# Get the key of a dictionary from its value
+def get_key_by_value(dictionary, target_value):
+    for key, value in dictionary.items():
+        if value == target_value:
+            return key
+
+# Create transforms to apply to the input of the model
+transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor()])
+
+def classify_object(img_path):
+
+    # Read and show image that will be the input of the model
+    test_image = cv2.imread(img_path)
+    cv2.imshow('image', test_image)
+
+    # Apply transformations to the image
+    pil_image = Image.open(img_path)
+    tensor_image = transform(pil_image)
+
+    model = Model()
+
+    checkpoint = torch.load('objects_classifier/models/model.pkl')
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+
+    with torch.no_grad():
+        detected_object = model(tensor_image.unsqueeze(0))
+
+        predicted_probability = F.softmax(detected_object, dim=1)
+        predicted_index = torch.argmax(predicted_probability, dim=1).cpu().numpy()
+        predicted_label = get_key_by_value(label_mapping, predicted_index)
+
+        print(f"Predicted index: {predicted_index}\nPredicted label: {predicted_label}")
+
+    cv2.waitKey(0)
+
+    return predicted_label
+
+##################################################### OBJECTIVE 3 ###########################################################################
+
+
+
+##################################################### OBJECTIVE 4 ###########################################################################
+
+import pyttsx3
+import time
+
+# Make the computer tell us the scene we are looking at, the number of objects, their names and their dimensions
+def say(objects_list, scene, dimensions):
+
+    cleaned_items = [item.replace("_", " ") for item in objects_list]
+
+    pyttsx3.speak((f"We are looking at the scene {scene} and I can recognize {len(objects_list)} objects. Let's start with"))
+
+    for i in range(len(dimensions)):
+        dim = dimensions[i]
+        item = cleaned_items[i]
+        pyttsx3.speak(f"the object number {int(i + 1)}. The {item}, has width {round(dim[0], 2)} and height {round(dim[1], 2)}.")
+
+        time.sleep(1)
+
+    pyttsx3.speak("Thank you for listening, hope I did not miss anything.")
+
+##################################################### OBJECTIVE 4 ###########################################################################
+
 
 
 def main():
-    #escolher cena aleatoriamente
-    scene_number = random.choice(list(views.keys()))
 
     #Converter imagem em point cloud
     filename_rgb = f'images/{scene_number}-color.png'
@@ -97,6 +252,7 @@ def main():
     objects_point_clouds = []
     objects = []
     caixas = []
+    predicted_labels = []
     i = 0
 
     for group_n in groups:
@@ -137,10 +293,13 @@ def main():
             elif v < vmin:
                 vmin = v       
 
-        img = image_rgb[vmin:vmax, umin:umax]
-        cv2.imwrite(f'object{i}_scene{scene_number}.png', img)
+        img = image_rgb[vmin-20:vmax+20, umin-20:umax+20]
 
-        #repor transformação
+        cv2.imwrite(f'objetos/scene{scene_number}_object{i}.png', img)
+
+        predicted_label = classify_object(f'objetos/scene{scene_number}_object{i}.png')
+
+        # Redo point cloud transformation
         object_point_cloud = object_point_cloud.transform(np.linalg.inv(T))
 
         # Create a dictionary to represent the objects
@@ -151,13 +310,15 @@ def main():
         
         objects.append(d)
 
-        pc_to_convert = d["points"]
-        pc_points = pc_to_convert.points
-        points = np.asarray(pc_points)
-
         caixas.append(caixa)
         objects_point_clouds.append(object_point_cloud)
-        i = i + 1
+
+        predicted_labels.append(predicted_label)
+
+        i += 1
+
+    cv2. destroyAllWindows() 
+
 
     path = 'Data_objects'
     files = [f for f in os.listdir(path) if f.endswith('.pcd')]
@@ -210,7 +371,6 @@ def main():
                 # ------------------------------------------
                 # Start associating each object 
                 # ------------------------------------------
-                
                 if  volume_compare < 0.006 :        
                     if reg_p2p.inlier_rmse < min_error and reg_p2p.inlier_rmse != 0:
                         if object['rmse'] > reg_p2p.inlier_rmse:
@@ -218,91 +378,36 @@ def main():
                             object['indexed'] = model_idx
                             object["fitness"] = reg_p2p.fitness
 
-    # Draw bbox
-    #bbox_to_draw = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(box)
-    #entities.append(bbox_to_draw)
-    
+
+    # Get sizes (width, height) and cylindrical volume for each object
     dimensions = []
-    # Draw objects
-    color = []
-    for groups, object in enumerate(objects):
+    # color = []
 
-        properties = ObjectProperties(object)
-        size = properties.getSize()
-        volume = math.pi* size[0]**2 * size[1] #cylindrical volume
-        #forlmula não está correta, aporximiação grosseira
-        
+    for i, object in enumerate(objects):
+        size = get_object_size(object)
         dimensions.append(size)
-        color_rgb = properties.getColor(group_n)
+
+        # color_rgb = get_object_color(i)
         
-        min_colours = {}
-        for key, name in webcolors.CSS21_HEX_TO_NAMES.items():#CSS3_HEX_TO_NAMES.items():
-            r_c, g_c, b_c = webcolors.hex_to_rgb(key)
-            rd = (r_c - color_rgb[0]) ** 2
-            gd = (g_c - color_rgb[1]) ** 2
-            bd = (b_c - color_rgb[2]) ** 2
-            min_colours[(rd + gd + bd)] = name
-        closest_color = min_colours[min(min_colours.keys())]
+        # min_colours = {}
+        # for key, name in webcolors.CSS21_HEX_TO_NAMES.items():
+        #     r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        #     rd = (r_c - color_rgb[0]) ** 2
+        #     gd = (g_c - color_rgb[1]) ** 2
+        #     bd = (b_c - color_rgb[2]) ** 2
+        #     min_colours[(rd + gd + bd)] = name
+        # closest_color = min_colours[min(min_colours.keys())]
 
+        # try:
+        #     actual_name = webcolors.rgb_to_name(color_rgb)
+        #     closest_name = actual_name
+        # except ValueError:
+        #     closest_name = closest_color
+        #     actual_name = None
 
-        ## tentar descobrir a moda da cor dos pontos
+        # print(f"This object's approximate color is {closest_name} with {color_rgb} RGB value")
+        # color.append(closest_name)
 
-
-        try:
-            actual_name = webcolors.rgb_to_name(color_rgb)
-            closest_name = actual_name
-        except ValueError:
-            closest_name = closest_color
-            actual_name = None
-        print(" \n" "This object's volume is " + str(volume))
-        print("This object's approximate color is " + str(closest_name) + ' with ' + str(color_rgb) + ' RGB value')
-        color.append(closest_name)
-
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
-
-    #file_name = args.dataset_path.split('/')[-1]
-    file_name = args.dataset_path.split('/')[-1]
-    number = file_name.split('.')[0]
-    scenario_name = str(number) 
-    #image = ImageProcessing()
-    #result = image.loadPointCloud(centers, args.cropped, number)
-    lista_audio = []
-
-    app = gui.Application.instance
-    app.initialize() # create an open3d app
-
-    #w = app.create_window("Open3D - 3D Text", 1920, 1080)
-    #widget3d = gui.SceneWidget()
-    #widget3d.scene = rendering.Open3DScene(w.renderer)
-    #widget3d.scene.set_background([0,0,0,1])  # set black background
-    #material = rendering.MaterialRecord()
-    #material.shader = "defaultUnlit"
-    #material.point_size = 2 * w.scaling
-
-    #for entity_idx, entity in enumerate(entities):
-    #    widget3d.scene.add_geometry("Entity " + str(entity_idx), entity, material)
-    # Draw labels
-    for group_n, object in enumerate(objects):
-        label_pos = [object['center'][0], object['center'][1], object['center'][2] + 0.15]
-        label_text = "Obj: " + object['idx']
-        for i, object_point_cloud in enumerate(list_pcd.values()):
-            print("objecto"+str(object["indexed"]))
-            print("o i: "+str(i))
-            if object['indexed'] == i:
-                variable_name = list(list_pcd.keys())[i]
-                print("nome da variável:", variable_name)
-                label_text += " "+variable_name
-                lista_audio.append(variable_name)
-        #label = widget3d.add_3d_label(label_pos, label_text)
-        # label.color = gui.Color(255,0,0)
-        # label.scale = 2
-    #bbox = widget3d.scene.bounding_box
-    #widget3d.setup_camera(60.0, bbox, bbox.get_center())
-    #w.add_child(widget3d)
-    app.run()
-    
-   
 
     entities = [pcd_cropped]
     entities.extend([point_cloud_table])
@@ -314,9 +419,10 @@ def main():
                                     lookat=views[scene_number]['trajectory'][0]['lookat'],
                                     up=views[scene_number]['trajectory'][0]['up'])
 
-  # Inicialize audio processing
-    audio = audioprocessing()
-    audio_final = audio.loadaudio(lista_audio, number, dimensions)
+
+    # Inicialize audio processing
+    say(predicted_labels, scene_number, dimensions)
+
 
 if __name__ == "__main__":
     main()

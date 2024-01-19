@@ -9,7 +9,8 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import argparse
 from classes import *
-
+import os
+from pc_talk_to_us import say
 
 view = {
     "class_name": "ViewTrajectory",
@@ -32,10 +33,11 @@ view = {
 }
 
 def main():
+    scene_number = "01"
     # -----------------------------------------------------------------
     # Initialization
     # -----------------------------------------------------------------
-    pcd_downsampled = o3d.io.read_point_cloud('data/scenes/rgbd-scenes-v2/pc/01.ply')
+    pcd_downsampled = o3d.io.read_point_cloud(f'data/scenes/rgbd-scenes-v2/pc/{scene_number}.ply')
 
     # -----------------------------------------------------------------
     # Execution
@@ -297,8 +299,6 @@ def main():
     material.shader = "defaultUnlit"
     material.point_size = 2 * w.scaling
 
-
-
     for entity_idx, entity in enumerate(entities):
         widget3d.scene.add_geometry("Entity " + str(entity_idx), entity, material)
     # Draw labels
@@ -321,11 +321,8 @@ def main():
     w.add_child(widget3d)
     app.run()
     
-    #print(dimensions)
-    #print('.')
-     # Inicialize audio processing
-    audio = audioprocessing()
-    audio_final = audio.loadaudio(lista_audio, number, dimensions)
+    # Inicialize audio processing
+    say(lista_audio, scene_number, dimensions)
 
 if __name__ == "__main__":
     main()

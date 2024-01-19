@@ -1,8 +1,5 @@
 # SAVI - Trabalho Prático 2
 
-
-## Where's my coffee mug?
-
 O objetivo deste trabalho é que o sistema desenvolvido seja capaz de detetar os objetos presentes numa cena e obter as suas propriedades. 
 Para isso são utilizados os dados do Washington RGB-D Dataset, onde existem dois datasets distintos, o RGB-D Object Dataset e o RGB-D Scenes Dataset. 
 O RGB-D Object Dataset contém vários objetos de diferentes categorias. Neste dataset os objetos são visualizados isoladamente. 
@@ -10,17 +7,28 @@ Além disso, o dataset contém informações acercas dos objetos tais como: os l
 Este dataset tem também anotações dos objetos na cena.
 
 ### Objetivo 1 - Treino de um classificador em deep learning
-1.1 - Desenvolver uma rede de deep learning que consiga efetuar a classificação dos objetos, com a divisão do RGB-D Object Dataset em treino e teste (80% / 20%). 
+Treinar uma rede de deep learning que faça classificação de objetos. Fazendo a divisão do RGB-D Object Dataset em 80% treino e 20% teste.
 
-1.2 - Depois de treinada, calcular a precisão global e por classe.
+![Image](images/treino.png)
+
+A rede foi treinada com uma condição de paragem perca de treino e de teste de menos de 0,1
+
+'''
+epoch_train_loss < 0.1 and epoch_test_loss < 0.1:
+  break
+'''
 
 ### Objetivo 2 - Pre-processamento 3D
 2.1 - Desenvolver um sistema que processe a nuvem de pontos de uma cena (dados do RGB-D Scenes Dataset) e que consiga isolar os objetos presentes nessa nuvem. 
+
+![Image](images/objetivo2e3.jpeg)
 
 2.2 - Calcular as várias propriedades dos objetos como: a cor, a altura, a largura e outras propriedades relevantes.
 
 ### Objetivo 3 - Classificação de objetos na cena
 3.1 - Através do ponto anterior, extrair uma sub-imagem que contenha apenas o objeto.
+
+![Image](objetos/object0.png) ![Image](objetos/object1.png) ![Image](objetos/object2.png) ![Image](objetos/object3.png) ![Image](objetos/object4.png)
 
 3.2 - Dar a imagem extraída à rede de classificação anteriormente desenvolvida. (Outra solução será treinar uma rede de classificação que utilize informação tridimensional para o reconhecimento de objetos.)
 
@@ -30,7 +38,11 @@ Utilizar um sintetizador de discurso para que o sistema consiga descrever verbal
 "A cena contém duas canecas, uma branca e outra azul, e uma caixa de cereais vermelha com altura de 15 centímetros."
 
 ### Objetivo 5 - Métricas de performance
-Apresentar métricas de performance. Em particular, para os detetores de objetos devem ser apresentadas métricas de Precision, Recall e F1 Score. 
+Apresentar métricas de performance como Precision, Recall e F1 Score.
+
+![Image](images/test.png)
+
+As métricas foram salvas em json_files/metrics.json e os resultados para cada teste com os filenames, ground truth labels e predicted labels foram salvos em json_files/results.json
 
 ### Objetivo 6 - Sistema em tempo real
 Experimentar o sistema a correr em tempo real com uma camara RGB-D em frente de uma mesa com objetos.

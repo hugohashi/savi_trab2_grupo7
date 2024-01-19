@@ -1,24 +1,22 @@
-#isola os objetos e retira uma imagem de cada objeto
 
-from views import *
+#!/usr/bin/env python3
+
 import open3d as o3d
 import cv2
-import copy
 import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
 import math
 import random
 from matplotlib import cm
 from more_itertools import locate
 import webcolors
-import open3d.visualization.gui as gui
-import open3d.visualization.rendering as rendering
-import argparse
+import pygame
+from gtts import gTTS
+
+from views import *
 from classes import *
 
-import pyttsx3
-import time
+
+########## OBJECTIVE 3 ##########
 
 import json
 import torch
@@ -55,7 +53,7 @@ def classify_object(img_path):
 
     model = Model()
 
-    checkpoint = torch.load('objects_classifier/models/model.pkl', map_location=torch.device('cpu'))
+    checkpoint = torch.load('objects_classifier/models/model.pkl')
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
 
@@ -72,26 +70,28 @@ def classify_object(img_path):
 
     return predicted_label
 
+########## OBJECTIVE 3 ##########
 
 
-# Make the computer tell us the scene we are looking at, the number of objects, their names and their dimensions
+########## OBJECTIVE 4 ##########
+
+# Computer tell us the scene we are looking at, the number of objects, their names and their dimensions
 def say(objects_list, scene, dimensions, colors):
-   
 
     cleaned_items = [item.replace("_", " ") for item in objects_list]
-    text = "" 
+    text = ""
     for i in range(len(objects_list )):
         dim = dimensions[i]
         item = cleaned_items[i]
         color = colors[i]
-        
+
         text += f"the object number {int(i + 1)}. The {item} has color {color} and width {round(dim[0], 2)} and height {round(dim[1], 2)}."
-    pygame.mixer.init()
     
-    # Gerar a descrição da cena
+    pygame.mixer.init()
+
     text_final = f"We are looking at the scene {scene} and I can recognize {len(objects_list)} objects. Let's start with {text} thank you for listening, hope I did not miss anything."
     print(text_final)
-    
+
     tts = gTTS(text_final, lang='en')
     tts.save("narracao.mp3")
 
@@ -100,36 +100,37 @@ def say(objects_list, scene, dimensions, colors):
     pygame.mixer.music.play()
 
     while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(10)    
+        pygame.time.Clock().tick(10)
+
+########## OBJECTIVE 4 ##########
+
 
 def main():
-    #escolher cena aleatoriamente
+
+    # Choose random scene
     scene_number = random.choice(list(views.keys()))
 
-    #Converter imagem em point cloud
-    filename_rgb = f'images/{scene_number}-color.png'
-    filename_depth = f'images/{scene_number}-depth.png'
+    # Convert the image in point cloud
+    image_rgb = cv2.imread(f'images/{scene_number}-color.png')
+    color_raw = o3d.io.read_image(f'images/{scene_number}-color.png')
+    depth_raw = o3d.io.read_image(f'images/{scene_number}-depth.png')
 
-    image_rgb = cv2.imread(filename_rgb)
-    color_raw = o3d.io.read_image(filename_rgb)
-    depth_raw = o3d.io.read_image(filename_depth)
-
-    #criar imagem rgbd a partir da imagem rgb e respetiva depth
+    # Create rgbd image from rgb image with its respective depth
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(color_raw, depth_raw, depth_scale = 6000, convert_rgb_to_intensity = False)
 
-    #matriz (w, h, fx, fy, cx, cy)
+    # Intrinsic Matrix (w, h, fx, fy, cx, cy)
     K = o3d.camera.PinholeCameraIntrinsic(640, 480, 525, 525, 320, 240)    
 
-    #Criar point cloud
+    # Create point cloud
     pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd_image, K)
 
     T = views[scene_number]['T']
-    print(T)
+    # print(T)
 
-    #Apply transformation
+    # Apply transformation to the point cloud
     pcd_downsampled = pcd.transform(np.linalg.inv(T))
 
-    #Create a vector3d with the points in the boundingbox
+    # Create a vector3d with the points in the bounding box
     np_vertices = np.ndarray((8, 3), dtype=float)
 
     sx = views[scene_number]['sx']
@@ -137,46 +138,43 @@ def main():
     sz_top = views[scene_number]['sz top']
     sz_bottom = views[scene_number]['sz bot']
 
-    #top vertices
+    # Top vertices
     np_vertices[0, 0:3] = [sx, sy, sz_top]
     np_vertices[1, 0:3] = [sx, -sy, sz_top]
     np_vertices[2, 0:3] = [-sx, -sy, sz_top]
     np_vertices[3, 0:3] = [-sx, sy, sz_top]
 
-    #bottom vertices
+    # Bottom vertices
     np_vertices[4, 0:3] = [sx, sy, sz_bottom]
     np_vertices[5, 0:3] = [sx, -sy, sz_bottom]
     np_vertices[6, 0:3] = [-sx, -sy, sz_bottom]
     np_vertices[7, 0:3] = [-sx, sy, sz_bottom]
 
-    #numpy to open3d
+    # Numpy to open3d
     vertices = o3d.utility.Vector3dVector(np_vertices)
 
-    #Create a bounding box
+    # Create a bounding box
     box = o3d.geometry.AxisAlignedBoundingBox.create_from_points(vertices)
 
-    #Crop the original point cloud using the bounding box
+    # Crop the original point cloud using the bounding box
     pcd_cropped = pcd_downsampled.crop(box)
 
-    #remover plano mesa -> Plane segmentation - RANSAC
-    #Para detetar os pontos que pertencem à mesa (1000 iterações, porque quantas mais, mais facil é identificar o chão, visto que é o maior plano, logo tem mais pontos!)
+    # Plane segmentation (RANSAC) - detect points that belong to the table (100 iterations - the more number of iterations the easier it is to identify the plane)
     plane_model, inliers = pcd_cropped.segment_plane(distance_threshold = views[scene_number]['dist thr'], ransac_n = 3, num_iterations = 100)
-
     a, b, c, d = plane_model
 
-    #nuvem só com os objetos em cima da mesa (outliers)
+    # Point cloud with only the objects on top of the table (outliers)
     point_cloud_objects = pcd_cropped.select_by_index(inliers, invert = True)
-    #point cloud mesa pintada!
     point_cloud_table = pcd_cropped.select_by_index(inliers, invert = False)
     point_cloud_table.paint_uniform_color([0, 1, 0])
 
-    #Clustering - separar objetos!
+
+    # Clustering - Separating objects!
     labels = point_cloud_objects.cluster_dbscan(eps=views[scene_number]['eps'], min_points=200, print_progress=True)
-
     groups = list(set(labels))
-
     colormap = cm.Set1(range(0, len(groups)))
     groups.remove(-1)
+
 
     objects_point_clouds = []
     objects = []
@@ -185,17 +183,17 @@ def main():
     i = 0
 
     for group_n in groups:
-        #encontrar os indices dos objetos que pertencem a um dado grupo!
+
+        # Find indexes of objects for a specific group
         group_idx = list(locate(labels, lambda x: x==group_n))
 
         object_point_cloud = point_cloud_objects.select_by_index(group_idx, invert=False)
         
-        #pintar de uma dada cor a caixa em volta do objeto encontrado
+        # Paint the bounding boxes for the objects detected
         caixa = object_point_cloud.get_oriented_bounding_box()
         caixa.color = colormap[group_n, 0:3]
 
-        #sub imagem
-        #desfazer transformação
+        # Undo transformation
         T_inv = np.linalg.inv(T)
         object_point_cloud = object_point_cloud.transform(np.linalg.inv(T_inv))
 
@@ -222,10 +220,11 @@ def main():
             elif v < vmin:
                 vmin = v       
 
+        # Create an image that will be the input of the model
         img = image_rgb[vmin-20:vmax+20, umin-20:umax+20]
-
         cv2.imwrite(f'objetos/scene{scene_number}_object{i}.png', img)
 
+        # Test the model with the image
         predicted_label = classify_object(f'objetos/scene{scene_number}_object{i}.png')
 
         # Redo point cloud transformation
@@ -248,7 +247,8 @@ def main():
 
     cv2. destroyAllWindows() 
 
-    #cor e volume
+
+    # Get color and volume
     color = []
     dimensions = []
     i = 0
@@ -260,21 +260,18 @@ def main():
         print(" \n" f"The object {i} volume is " + str(volume))
         
         dimensions.append(size)
-        color_rgb = properties.getColor(group_n)
-        color_rgb_try=properties.getColortry(group_n)
+        color_rgb = properties.getColor(group_n, scene_number)
+        color_rgb_try=properties.getColortry(group_n, scene_number)
 
-        
         # rgb1,rgb2,rgb3 = properties.getcolortry2(group_n)
         # ttt= [rgb1,rgb2,rgb3]
         min_colours = {}
-        
-        
+
         closest_names =[]
         # for p in ttt :
         closest_name = None
         for key, name in webcolors.CSS21_HEX_TO_NAMES.items():#CSS3_HEX_TO_NAMES.items():
-            #r, g, b = cv2.split(color_rgb_try)
-            
+            # r, g, b = cv2.split(color_rgb_try)
             # r, g, b = cv2.split(p)
             # r, g, b = p
             r, g, b = webcolors.hex_to_rgb(key)
@@ -291,17 +288,14 @@ def main():
             closest_name = closest_color
             actual_name = None
         closest_names.append(closest_name)
-        
-        
+
         print(f"The object {i} approximate colors is " + str(closest_names) + ' with ' + str(color_rgb_try) + ' RGB value')
-        
+
         color.append(closest_name)
+        i += 1
 
-        i = i + 1
 
-
-    #visualização
-
+    # Visualization
     entities = [pcd_cropped]
     entities.extend([point_cloud_table])
     entities.extend(objects_point_clouds)

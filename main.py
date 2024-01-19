@@ -85,7 +85,7 @@ def say(objects_list, scene, dimensions, colors):
         item = cleaned_items[i]
         color = colors[i]
 
-        text += f"the object number {int(i + 1)}. The {item} has color {color} and width {round(dim[0], 2)} and height {round(dim[1], 2)}."
+        text += f"the object number {int(i + 1)} is a {item}, it has color {color}, the width is {round(dim[0], 2)} and the height is {round(dim[1], 2)}."
     
     pygame.mixer.init()
 

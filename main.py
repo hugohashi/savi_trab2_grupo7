@@ -55,7 +55,7 @@ def classify_object(img_path):
 
     model = Model()
 
-    checkpoint = torch.load('objects_classifier/models/model.pkl')
+    checkpoint = torch.load('objects_classifier/models/model.pkl', map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
 
@@ -76,20 +76,31 @@ def classify_object(img_path):
 
 # Make the computer tell us the scene we are looking at, the number of objects, their names and their dimensions
 def say(objects_list, scene, dimensions, colors):
+   
 
     cleaned_items = [item.replace("_", " ") for item in objects_list]
-
-    pyttsx3.speak((f"We are looking at the scene {scene} and I can recognize {len(objects_list)} objects. Let's start with"))
-
-    for i in range(len(dimensions)):
+    text = "" 
+    for i in range(len(objects_list )):
         dim = dimensions[i]
         item = cleaned_items[i]
         color = colors[i]
-        pyttsx3.speak(f"the object number {int(i + 1)}. The {item} has color {color} and width {round(dim[0], 2)} and height {round(dim[1], 2)}.")
+        
+        text += f"the object number {int(i + 1)}. The {item} has color {color} and width {round(dim[0], 2)} and height {round(dim[1], 2)}."
+    pygame.mixer.init()
+    
+    # Gerar a descrição da cena
+    text_final = f"We are looking at the scene {scene} and I can recognize {len(objects_list)} objects. Let's start with {text} thank you for listening, hope I did not miss anything."
+    print(text_final)
+    
+    tts = gTTS(text_final, lang='en')
+    tts.save("narracao.mp3")
 
-        time.sleep(1)
+    pygame.init()
+    pygame.mixer.music.load("narracao.mp3")
+    pygame.mixer.music.play()
 
-    pyttsx3.speak("Thank you for listening, hope I did not miss anything.")
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(10)    
 
 def main():
     #escolher cena aleatoriamente
